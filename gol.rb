@@ -7,21 +7,28 @@ class View
 		@minx = -5
 		@miny = -5
 		@area_side = 10
+
+		@mincellx = nil
+		@maxcellx = nil
+		@mincelly = nil
+		@maxcelly = nil
 	end
 
 	def <<(c)
+		x, y = *c
+		
+		@mincellx = x if ! @mincellx || x < @mincellx
+		@maxcellx = x if ! @maxcellx || x > @maxcellx
+		@mincelly = y if ! @mincelly || y < @mincelly
+		@maxcelly = y if ! @maxcelly || y > @maxcellx
 
-
-		while ! fitsInView? c do
-			adjustView!
-		end
+		adjustView! if ! fitsInView? x, y
 	end
 
 	private
 
-	def fitsInView?(c)
+	def fitsInView?(x, y)
 		# Offset 1 to include all (possible) neighbours.
-		x, y = *c
 		x > @minx + 1 && 
 		x < @minx + @area_side - 1 && 
 		y > @miny + 1 && 
@@ -29,10 +36,16 @@ class View
 	end
 
 	def adjustView!
-		puts "Adusting view."
-		@area_side += 10
-		@minx -= 5
-		@miny -= 5
+		dmaxcell = 	[ @maxcellx - @mincellx, @maxcelly - @mincelly ]
+
+		# Grow screen if necessary.
+		if dmaxcell.any? { |d| d + 10 >= @area_side }
+			@area_side = dmaxcell.max + 10
+		end
+		
+		# Move simulation to center of view.
+		@minx = @mincellx - ((@area_side - dmaxcell[0]) / 2)
+		@miny = @mincelly - ((@area_side - dmaxcell[1]) / 2)
 	end
 end
 
