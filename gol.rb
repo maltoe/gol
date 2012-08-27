@@ -1,8 +1,10 @@
+require 'set'
+
 class World
 	attr_reader :stable
 
 	def initialize(area_side = 10)
-		@beings = []
+		@beings = Set.new
 		@area_side = area_side
 		@stable = true
 	end
