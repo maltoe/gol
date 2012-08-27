@@ -1,7 +1,10 @@
 class World
+	attr_reader :stable
+
 	def initialize(area_side = 10)
 		@beings = []
 		@area_side = area_side
+		@stable = true
 	end
 
 	def populate!(n, m)
@@ -51,6 +54,7 @@ class World
 
 	def live!(c)
 		@beings << c
+		@stable = false
 
 		while ! fitsInArea? c do
 			growArea!
@@ -121,19 +125,19 @@ starts = [
 	]
 ]
 
+puts "Game of Life in Ruby"
+
 m = World.new
 m.populate! 10, 50
 #m.load! starts[1]
 
-puts "Game of Life in Ruby"
-
-generation = 0
-while generation <= 200 && m.vibrant? do
-	sleep 0.3
+(0..200).each do |generation|
 	system "clear"
 	puts "Generation: #{ generation }"
 	puts m
+
+	break if m.stable || (! m.vibrant?)
 		
 	m = m.breed
-	generation += 1
+	sleep 0.2
 end
