@@ -68,10 +68,6 @@ class World
 		s.each { |c| live! c }
 	end
 
-	def vibrant?
-		! @beings.empty?
-	end
-
 	def breed
 		nextgen = World.new @view
 		for i in 0..@view.area_side do
@@ -159,15 +155,15 @@ starts = [
 puts "Game of Life in Ruby"
 
 m = World.new
-m.populate! 10, 150
-#m.load! starts[1]
+#m.populate! 10, 150
+m.load! starts[1]
 
 (0..200).each do |generation|
 	system "clear"
 	puts "Generation: #{ generation }"
 	puts m
 
-	break if m.stable || (! m.vibrant?)
+	break if m.stable
 		
 	m = m.breed
 	sleep 0.2
