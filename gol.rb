@@ -1,11 +1,47 @@
 require 'set'
 
+class View
+	attr_reader :minx, :miny, :area_side
+
+	def initialize
+		@minx = -5
+		@miny = -5
+		@area_side = 10
+	end
+
+	def <<(c)
+
+
+		while ! fitsInView? c do
+			adjustView!
+		end
+	end
+
+	private
+
+	def fitsInView?(c)
+		# Offset 1 to include all (possible) neighbours.
+		x, y = *c
+		x > @minx + 1 && 
+		x < @minx + @area_side - 1 && 
+		y > @miny + 1 && 
+		y < @miny + @area_side - 1
+	end
+
+	def adjustView!
+		puts "Adusting view."
+		@area_side += 10
+		@minx -= 5
+		@miny -= 5
+	end
+end
+
 class World
 	attr_reader :stable
 
-	def initialize(area_side = 10)
+	def initialize(view = View.new)
 		@beings = Set.new
-		@area_side = area_side
+		@view = view
 		@stable = true
 	end
 
@@ -28,11 +64,10 @@ class World
 	end
 
 	def breed
-		nextgen = World.new @area_side
-		s2 = @area_side / 2
-		for i in -s2...s2 do
-			for j in -s2...s2 do
-				c = [i, j]
+		nextgen = World.new @view
+		for i in 0...@view.area_side do
+			for j in 0...@view.area_side do
+				c = [@view.minx + i, @view.miny + j]
 				n = neighbours c				
 				nextgen.live! c if n === 3 || ((lives? c) && n === 2)
 			end
@@ -41,11 +76,11 @@ class World
 	end
 
 	def to_s
-		s2 = @area_side / 2
 		str = ""
-		for i in -s2...s2 do
-			for j in -s2...s2 do
-				str += (lives? [i, j]) ? "X" : "."
+		for i in 0...@view.area_side do
+			for j in 0...@view.area_side do
+				c = [@view.minx + i, @view.miny + j]
+				str += (lives? c) ? "X" : "."
 			end
 			str += "\n"
 		end
@@ -56,11 +91,8 @@ class World
 
 	def live!(c)
 		@beings << c
+		@view << c
 		@stable = false
-
-		while ! fitsInArea? c do
-			growArea!
-		end
 	end
 
 	private
@@ -81,18 +113,6 @@ class World
 			[x, y + 1],
 			[x + 1, y + 1]
 		].find_all { |n| lives? n }.length
-	end
-
-	def fitsInArea?(c)
-		# -1 to include all (possible) neighbours.
-		x, y = *c
-		s2 = @area_side / 2 - 1
-		x >= -s2 && x < s2 && y >= -s2 && y < s2
-	end
-
-	def growArea!
-		puts "Resizing area."
-		@area_side += 10
 	end
 end
 
@@ -130,7 +150,7 @@ starts = [
 puts "Game of Life in Ruby"
 
 m = World.new
-m.populate! 10, 50
+m.populate! 10, 150
 #m.load! starts[1]
 
 (0..200).each do |generation|
