@@ -28,11 +28,7 @@ class View
 	private
 
 	def fitsInView?(x, y)
-		# Offset 1 to include all (possible) neighbours.
-		x > @minx + 1 && 
-		x < @minx + @area_side - 1 && 
-		y > @miny + 1 && 
-		y < @miny + @area_side - 1
+		x > @minx && x < @minx + @area_side && y > @miny && y < @miny + @area_side
 	end
 
 	def adjustView!
@@ -78,8 +74,8 @@ class World
 
 	def breed
 		nextgen = World.new @view
-		for i in 0...@view.area_side do
-			for j in 0...@view.area_side do
+		for i in 0..@view.area_side do
+			for j in 0..@view.area_side do
 				c = [@view.minx + i, @view.miny + j]
 				n = neighbours c				
 				nextgen.live! c if n === 3 || ((lives? c) && n === 2)
@@ -90,8 +86,8 @@ class World
 
 	def to_s
 		str = ""
-		for i in 0...@view.area_side do
-			for j in 0...@view.area_side do
+		for i in 0..@view.area_side do
+			for j in 0..@view.area_side do
 				c = [@view.minx + i, @view.miny + j]
 				str += (lives? c) ? "X" : "."
 			end
