@@ -7,7 +7,9 @@ class World
 	def populate!(n, m)
 		n2 = n / 2
 		m.times do
-			c = [rand(-n2...n), rand(-n2...n)] while lives? c
+			begin
+				c = [rand(-n2...n), rand(-n2...n)]
+			end while lives? c
 			live! c
 		end
 	end
@@ -120,8 +122,8 @@ starts = [
 ]
 
 m = World.new
-#m.populate! 20, 50
-m.load! starts[1]
+m.populate! 10, 50
+#m.load! starts[1]
 
 puts "Game of Life in Ruby"
 
