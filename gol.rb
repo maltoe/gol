@@ -66,10 +66,18 @@ class World
 		for i in 0..@view.area_side do
 			for j in 0..@view.area_side do
 				c = [@view.minx + i, @view.miny + j]
-				n = neighbours c				
-				if n === 3 || ((@beings.include? c) && n === 2)
-					nextgen << c 
-					@stable = false
+				n = neighbours c
+				if @beings.include? c
+					if n === 2 || n === 3
+						nextgen << c
+					else
+						@stable = false
+					end
+				else
+					if n === 3
+						nextgen << c
+						@stable = false
+					end
 				end
 			end
 		end
@@ -142,13 +150,20 @@ starts = [
 		[-1, 1],
 		[0, 1],
 		[1, 1]
+	],
+	# Stable block
+	[
+		[0, 0],
+		[0, 1],
+		[1, 0],
+		[1, 1]
 	]
 ]
 
 puts "Game of Life in Ruby"
 
 
-m = World.new starts[1]
+m = World.new starts[4]
 #m = World.random 10, 150
 
 (0..200).each do |generation|
