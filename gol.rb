@@ -1,5 +1,17 @@
 require 'set'
 
+class RingBuffer < Array
+	def initialize(size)
+		super size
+		@ring_size = size
+	end
+
+	def <<(o)
+		shift if length == @ring_size
+		push o
+	end
+end
+
 class View
 	attr_reader :minx, :miny, :area_side
 
@@ -39,11 +51,10 @@ class View
 end
 
 class World
-	attr_reader :stable
 
 	def initialize(beings)
+		@history = RingBuffer.new(4)
 		@beings = beings || Set.new
-		@stable = beings ? beings.length === 0 : true
 		@view = View.new()
 		@view.update! beings if beings
 	end
@@ -62,27 +73,21 @@ class World
 
 	def breed!
 		nextgen = Set.new
-		@stable = true
 		for i in 0..@view.area_side do
 			for j in 0..@view.area_side do
 				c = [@view.minx + i, @view.miny + j]
 				n = neighbours c
-				if @beings.include? c
-					if n === 2 || n === 3
-						nextgen << c
-					else
-						@stable = false
-					end
-				else
-					if n === 3
-						nextgen << c
-						@stable = false
-					end
-				end
+				nextgen << c if n === 3 || ((@beings.include? c) && n === 2)
 			end
 		end
+
+		@history << @beings
 		@beings = nextgen
 		@view.update! @beings
+	end
+
+	def stable?
+		@beings.length == 0 || @history.any? { |h| h == @beings }
 	end
 
 	def to_s
@@ -162,16 +167,18 @@ starts = [
 
 puts "Game of Life in Ruby"
 
-
-m = World.new starts[4]
-#m = World.random 10, 150
+#m = World.new starts[3]
+m = World.random 10, 150
 
 (0..200).each do |generation|
 	system "clear"
 	puts "Generation: #{ generation }"
 	puts m
 
-	break if m.stable
+	if m.stable?
+		puts "Still life or oscillator detected."
+		break
+	end
 		
 	m.breed!
 	sleep 0.2
