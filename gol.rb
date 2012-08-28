@@ -7,32 +7,25 @@ class View
 		@minx = -5
 		@miny = -5
 		@area_side = 10
-
-		@mincellx = nil
-		@maxcellx = nil
-		@mincelly = nil
-		@maxcelly = nil
 	end
 
-	def <<(c)
-		x, y = *c
-		
-		@mincellx = x if ! @mincellx || x < @mincellx
-		@maxcellx = x if ! @maxcellx || x > @maxcellx
-		@mincelly = y if ! @mincelly || y < @mincelly
-		@maxcelly = y if ! @maxcelly || y > @maxcellx
-
-		adjustView! if ! fitsInView? x, y
+	def update!(beings)
+		adjustView! beings if beings.any? { |c| ! fitsInView? c }
 	end
 
 	private
 
-	def fitsInView?(x, y)
+	def fitsInView?(c)
+		x, y = *c
 		x > @minx && x < @minx + @area_side && y > @miny && y < @miny + @area_side
 	end
 
-	def adjustView!
-		dmaxcell = 	[ @maxcellx - @mincellx, @maxcelly - @mincelly ]
+	def adjustView!(beings)
+		xs = beings.map { |c| c[0] }
+		ys = beings.map { |c| c[1] }
+		mincellx = xs.min
+		mincelly = ys.min
+		dmaxcell = 	[ xs.max - mincellx, ys.max - mincelly ]
 
 		# Grow screen if necessary.
 		if dmaxcell.any? { |d| d + 10 >= @area_side }
@@ -40,44 +33,47 @@ class View
 		end
 		
 		# Move simulation to center of view.
-		@minx = @mincellx - ((@area_side - dmaxcell[0]) / 2)
-		@miny = @mincelly - ((@area_side - dmaxcell[1]) / 2)
+		@minx = mincellx - ((@area_side - dmaxcell[0]) / 2)
+		@miny = mincelly - ((@area_side - dmaxcell[1]) / 2)
 	end
 end
 
 class World
 	attr_reader :stable
 
-	def initialize(view = View.new)
-		@beings = Set.new
-		@view = view
-		@stable = true
+	def initialize(beings)
+		@beings = beings || Set.new
+		@stable = beings ? beings.length === 0 : true
+		@view = View.new()
+		@view.update! beings if beings
 	end
 
-	def populate!(n, m)
+	def self.random(n, m)
+		beings = []
 		n2 = n / 2
 		m.times do
 			begin
 				c = [rand(-n2...n), rand(-n2...n)]
-			end while lives? c
-			live! c
+			end while beings.include? c
+			beings << c
 		end
+		World.new beings
 	end
 
-	def load!(s)
-		s.each { |c| live! c }
-	end
-
-	def breed
-		nextgen = World.new @view
+	def breed!
+		nextgen = Set.new
 		for i in 0..@view.area_side do
 			for j in 0..@view.area_side do
 				c = [@view.minx + i, @view.miny + j]
 				n = neighbours c				
-				nextgen.live! c if n === 3 || ((lives? c) && n === 2)
+				if n === 3 || ((@beings.include? c) && n === 2)
+					nextgen << c 
+					@stable = false
+				end
 			end
 		end
-		nextgen
+		@beings = nextgen
+		@view.update! @beings
 	end
 
 	def to_s
@@ -85,26 +81,14 @@ class World
 		for i in 0..@view.area_side do
 			for j in 0..@view.area_side do
 				c = [@view.minx + i, @view.miny + j]
-				str += (lives? c) ? "X" : "."
+				str += (@beings.include? c) ? "X" : "."
 			end
 			str += "\n"
 		end
 		str
 	end
 
-	protected
-
-	def live!(c)
-		@beings << c
-		@view << c
-		@stable = false
-	end
-
 	private
-
-	def lives?(c)
-		@beings.include? c
-	end
 
 	def neighbours(c)
 		x, y = *c
@@ -117,7 +101,7 @@ class World
 			[x - 1, y + 1],
 			[x, y + 1],
 			[x + 1, y + 1]
-		].find_all { |n| lives? n }.length
+		].find_all { |n| @beings.include? n }.length
 	end
 end
 
@@ -149,14 +133,22 @@ starts = [
 		[1, 1],
 		[2, 1],
 		[3, 1]
+	],
+	# Glider
+	[
+		[0, -1],
+		[1, 0],
+		[-1, 1],
+		[0, 1],
+		[1, 1]
 	]
 ]
 
 puts "Game of Life in Ruby"
 
-m = World.new
-#m.populate! 10, 150
-m.load! starts[1]
+
+#m = World.new starts[3]
+m = World.random 10, 150
 
 (0..200).each do |generation|
 	system "clear"
@@ -165,6 +157,6 @@ m.load! starts[1]
 
 	break if m.stable
 		
-	m = m.breed
+	m.breed!
 	sleep 0.2
 end
