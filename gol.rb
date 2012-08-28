@@ -62,6 +62,7 @@ class World
 
 	def breed!
 		nextgen = Set.new
+		@stable = true
 		for i in 0..@view.area_side do
 			for j in 0..@view.area_side do
 				c = [@view.minx + i, @view.miny + j]
@@ -147,8 +148,8 @@ starts = [
 puts "Game of Life in Ruby"
 
 
-#m = World.new starts[3]
-m = World.random 10, 150
+m = World.new starts[1]
+#m = World.random 10, 150
 
 (0..200).each do |generation|
 	system "clear"
